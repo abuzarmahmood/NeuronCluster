@@ -15,6 +15,7 @@ import datashader as ds
 import datashader.transfer_functions as tf
 import pandas as pd
 import xarray as xr
+from matplotlib.widgets import RadioButtons
 
 
 class SelectFromCollection(object):
@@ -73,7 +74,6 @@ class SelectFromCollection(object):
         self.collection.set_facecolors(self.fc)
         self.canvas.draw_idle()
 
-
 class NeuronCluster():
 
     """
@@ -95,7 +95,7 @@ class NeuronCluster():
         return np.argmin(np.sum(np.abs\
                 (self.embedded_data - np.asarray(click_coords)),axis=1))
 
-#    def plot_hexbins(self):
+#    def initiate_plots(self):
 #        self.fig, self.ax = plt.subplots(nrows = 1, ncols = 2)
 #        self.ax[0].hexbin(self.embedded_data[:,0],self.embedded_data[:,1])
 #        self.ylims = \
@@ -128,13 +128,17 @@ class NeuronCluster():
                     'time' : idx[1].flatten(),
                     'voltage': self.waveforms.flatten()})
 
-    def plot_hexbins(self):
+    def initiate_plots(self):
         self.fig = plt.figure(figsize = (6,4))
         self.ax = []
-        self.ax.append(self.fig.add_axes([0.1,0.1,0.4,1]))
-        self.ax.append(self.fig.add_axes([0.6,0.1,0.4,0.4]))
+        self.ax.append(self.fig.add_axes([0.0,0.3,0.4,1]))
+        self.ax.append(self.fig.add_axes([0.6,0.1,0.3,0.4]))
         self.ax.append(self.fig.add_axes([0.6,0.6,0.4,0.4]))
+        self.ax.append(self.fig.add_axes([0.0,0.0,0.2,0.2], \
+                facecolor  ='white'))
         self.ax[0].hexbin(self.embedded_data[:,0],self.embedded_data[:,1])
+        self.this_spike, = self.ax[0].plot(self.embedded_data[0,0],\
+                self.embedded_data[0,1],'o', c='red')
 
         self.make_waveform_array()
         plt.sca(self.ax[2])
@@ -144,27 +148,37 @@ class NeuronCluster():
         img = tf.set_background(tf.shade(agg, how='eq_hist',cmap = 'lightblue'),\
                 color = (1,1,1))
         img.plot()
-        #self.ax[2].plot(self.waveforms.T)
 
         self.ylims = \
                 self.ax[1].set_ylim([np.min(self.waveforms),np.max(self.waveforms)])
         self.ax[2].set_ylim(self.ylims)
+
+        #plt.sca(self.ax[1])
+        #self.waveform_plot = plt.plot(self.waveforms[0,:],'x-')
+        self.waveform_plot, = self.ax[1].plot(self.waveforms[0,:],'x-')
         self.cid = \
                 self.fig.canvas.mpl_connect('button_press_event', self.onclick)
+
+        self.radio_control = RadioButtons(self.ax[3],\
+                ('Show','Cluster'))
+        self.radio_control.on_clicked(self.color_change)
+
         plt.show()
 
     def onclick(self,event):
         closest_spike = self.find_closest((event.xdata, event.ydata))
         print((closest_spike, event.xdata,event.ydata))
-        #self.ax[1].plot(self.waveforms[closest_spike,:]);plt.draw()
-        #self.fig.canvas.mpl_disconnect(self.cid)
-        plt.sca(self.ax[1])
-        plt.cla()
-        plt.plot(self.waveforms[closest_spike,:],'x-')
-        self.ax[1].set_ylim(self.ylims)
-        plt.draw()
+        self.waveform_plot.set_ydata(self.waveforms[closest_spike,:])
+        self.this_spike.set_data([self.embedded_data[closest_spike,0]],\
+                [self.embedded_data[closest_spike,1]])
+        self.fig.canvas.draw()
         plt.pause(0.01)
         #self.fig.canvas.mpl_connect(self.cid)
+
+    def color_change(self, label):
+        col_dict = {'Show':'red' , 'Cluster':'green'}
+        self.ax[1].set_facecolor(col_dict[label])
+        self.fig.canvas.draw()
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt

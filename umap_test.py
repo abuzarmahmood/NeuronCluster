@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 #import umap
 import dill
 #from sklearn.decomposition import PCA as pca
-os.chdir('/media/bigdata/firing_space_plot')
+os.chdir('/media/bigdata/firing_space_plot/NeuronCluster')
 from polygon_selector_demo import SelectFromCollection, NeuronCluster
 from scipy.signal import decimate
 
@@ -37,7 +37,7 @@ dill.load_session(dill_file)
 
 #cluster = NeuronCluster(waveforms, umap_waveforms)
 cluster = NeuronCluster(plotting_waveforms, pca_waveforms[:,:2])
-cluster.plot_hexbins()
+cluster.initiate_plots()
 exit()
 
 #def onclick(event):
